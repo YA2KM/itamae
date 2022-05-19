@@ -1,0 +1,8 @@
+/node_modules/
+/.idea/
+/yarn.lock
+/yarn-error.log
+/test/server/node_modules/
+/src/server/endpoints.ts
+/src/sushi
+/src/sushi/

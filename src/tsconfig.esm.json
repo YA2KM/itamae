@@ -1,0 +1,10 @@
+{
+  "extends": ".",
+  "compilerOptions": {
+    "module": "ESNext",
+    "outDir": "sushi/server/dist/esm",
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["server"]
+}

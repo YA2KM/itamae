@@ -1,0 +1,78 @@
+openapi: 3.0.0
+info:
+  title: Title
+  description: Title
+  version: 1.0.0
+paths:
+  /sample:
+    get:
+      summary: sample
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+        - name: nickName
+          in: query
+          schema:
+            type: string
+        - name: info
+          in: query
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+      responses:
+        "200":
+          description: sample Response
+          content:
+            "*/*":
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: hello Azuma
+  /azuma:
+    get:
+      summary: azuma
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: sample Response
+          content:
+            "*/*":
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: hello Azuma
+    post:
+      summary: azumaPost
+      requestBody:
+        content:
+          "*/*":
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: sample post response
+          content:
+            "*/*":
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: example
+servers:
+  - url: https://www

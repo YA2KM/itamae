@@ -1,0 +1,29 @@
+{
+  "name": "itamaejs",
+  "version": "1.0.0",
+  "description": "generate TypeScript Code from OpenAPI Schema.",
+  "main": "index.js",
+  "author": "Yukito Azuma",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/fs-extra": "^9.0.13",
+    "@types/mkdirp": "^1.0.2",
+    "axios": "^0.27.2",
+    "express": "^4.18.1",
+    "mkdirp": "^1.0.4",
+    "ts-node": "^10.7.0",
+    "typescript": "^4.6.4",
+    "vitest": "^0.12.6"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "fs-extra": "^10.1.0",
+    "swagger-parser": "^10.0.3",
+    "ts-node-dev": "^1.1.8",
+    "zod": "^3.16.0"
+  }
+}

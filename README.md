@@ -5,7 +5,7 @@ OpenAPI3 based express Wrap Code Generator With Zod for input validation.
 # THIS LIBRALY IS UNDER DEVELOPMENT.
 Most of functions are not available.
 
-#How to use
+# How to use
 
 ```
 cd src/

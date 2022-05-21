@@ -15,25 +15,19 @@ async function initialize(res: (value: (PromiseLike<http.Server> | http.Server))
     res(listener)
   })
 
-  sushi.endpoints.azumaPost.handle(async (body, query) => {
-    return {
-      message: `Hello! ${body.name}`
+  // sushi.endpoints.azumaGet.handle(async ({body,query}) => {
+  //   return {
+  //     message: query.name
+  //   }
+  // },undefined)
+
+  sushi.endpoints.azumaGet.handle({
+    async cb ({query}) {
+      return {
+        message: query.name
+      }
     }
-  }, undefined)
-
-  sushi.endpoints.sample.handle(async (body, query) => {
-    return {
-      message: "this is a sample!"
-    }
-  },undefined)
-
-  sushi.endpoints.azuma.handle(async (body, query) => {
-    return {
-      message: `You are Mr./Ms. ${query.name}.`
-    }
-  },undefined)
-
-
+  })
 
   //sushi.endpoints.
   app.use(sushi.init())

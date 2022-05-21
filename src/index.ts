@@ -29,6 +29,8 @@ import {compile} from './compiler';
       const endpoint: Endpoint = {
         method,
         path: pathString,
+        pathName: method+pathString.replace("/","_"),
+        operationId:endpointData.operationId,
         summary: endpointData.summary,
         responses: endpointData.responses,
         parameters: endpointData.parameters || [],

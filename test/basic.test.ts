@@ -8,18 +8,20 @@ import * as net from "net";
   const address:net.AddressInfo | string | null = server.address()
   if (!(typeof address === 'string' || address === null)) {
     test('azuma test', async () => {
-      const {data} = await axios.get(`http://localhost:${address.port}/azuma`,{
-        params: {
-          name: 'azuma',
-          nickname: 'AZ',
-          info: {
-            name: 'AZUMA'
+      try {
+        const {data} = await axios.get(`http://localhost:${address.port}/azuma`,{
+          params: {
+            name: 'azuma',
+            age: 20
           }
-        }
-      })
-      expect(data).toEqual({
-        message: 'azuma'
-      })
+        })
+        expect(data).toEqual({
+          message: 'azuma'
+        })
+      } catch (e) {
+        const d = e as any
+        console.log(d.response.data.query.issues)
+      }
     })
   }
 })();

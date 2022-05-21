@@ -46,11 +46,45 @@ export interface Endpoint {
   method: string,
   path: string,
   summary: string,
+  pathName: string,
+  operationId: string,
   responses: {
     200: Response
   }
   parameters: Parameters[],
   requestBody?: SchemaProperty
+}
+
+function createHandlePropsType({endpoint}: {endpoint: Endpoint}) {
+  return [
+    factory.createTypeAliasDeclaration(
+    undefined,
+    undefined,
+    factory.createIdentifier(`${endpoint.pathName}HandleQueryType`),
+    undefined,
+    factory.createTypeLiteralNode(
+      [
+        factory.createPropertySignature(
+          undefined,
+          factory.createIdentifier("body"),
+          undefined,
+          factory.createTypeReferenceNode(
+            factory.createIdentifier(`${endpoint.pathName}Body`),
+            undefined
+          )
+        ),
+        factory.createPropertySignature(
+          undefined,
+          factory.createIdentifier("query"),
+          undefined,
+          factory.createTypeReferenceNode(
+            factory.createIdentifier(`${endpoint.pathName}Query`),
+            undefined
+          )
+        )
+      ]
+    )
+  )]
 }
 
 export function processParametersAndRequestBody(parameters: Parameters[] | undefined, endpoint: Endpoint, property: SchemaProperty | undefined): Statement[] {
@@ -68,6 +102,9 @@ export function processParametersAndRequestBody(parameters: Parameters[] | undef
       property: property,
       endpoint: endpoint,
       type: 'Body'
+    }),
+    ...createHandlePropsType({
+      endpoint: endpoint
     })
   ]
 }
@@ -84,9 +121,9 @@ export function createExportClassStatement(endpoints: Endpoint[]) {
         factory.createObjectLiteralExpression(
           endpoints.map(endpoint => {
             return (factory.createPropertyAssignment(
-              factory.createIdentifier(endpoint.summary),
+              factory.createIdentifier(endpoint.operationId),
               factory.createNewExpression(
-                factory.createIdentifier(endpoint.summary),
+                factory.createIdentifier(endpoint.pathName),
                 undefined,
                 []
               )
@@ -151,7 +188,7 @@ export function createResType(endpoint: Endpoint) {
   return factory.createTypeAliasDeclaration(
     undefined,
     undefined,
-    factory.createIdentifier(`${endpoint.summary}Res`),
+    factory.createIdentifier(`${endpoint.pathName}Res`),
     undefined,
     factory.createTypeLiteralNode(
       Object.keys(endpoint.responses["200"].content['*/*'].schema.properties).map(key => {
@@ -165,7 +202,7 @@ export function createClass(endpoint: Endpoint) {
   return factory.createClassDeclaration(
     undefined,
     [factory.createModifier(ts.SyntaxKind.ExportKeyword)],
-    factory.createIdentifier(endpoint.summary),
+    factory.createIdentifier(endpoint.pathName),
     undefined,
     undefined,
     [
@@ -241,60 +278,58 @@ export function createClass(endpoint: Endpoint) {
         factory.createIdentifier("handle"),
         undefined,
         undefined,
-        [
-          factory.createParameterDeclaration(
-            undefined,
-            undefined,
-            undefined,
-            factory.createIdentifier("cb"),
-            undefined,
-            factory.createFunctionTypeNode(
+        [factory.createParameterDeclaration(
+          undefined,
+          undefined,
+          undefined,
+          factory.createObjectBindingPattern([
+            factory.createBindingElement(
               undefined,
-              [
-                factory.createParameterDeclaration(
+              undefined,
+              factory.createIdentifier("cb"),
+              undefined
+            ),
+            factory.createBindingElement(
+              undefined,
+              undefined,
+              factory.createIdentifier("onValidationFailure"),
+              undefined
+            )
+          ]),
+          undefined,
+          factory.createTypeLiteralNode([
+            factory.createPropertySignature(
+              undefined,
+              factory.createIdentifier("cb"),
+              undefined,
+              factory.createFunctionTypeNode(
+                undefined,
+                [factory.createParameterDeclaration(
                   undefined,
                   undefined,
                   undefined,
-                  factory.createIdentifier("body"),
+                  factory.createIdentifier("data"),
                   undefined,
                   factory.createTypeReferenceNode(
-                    factory.createIdentifier(`${endpoint.summary}Body`),
+                    factory.createIdentifier(`${endpoint.pathName}HandleQueryType`),
                     undefined
                   ),
                   undefined
-                ),
-                factory.createParameterDeclaration(
-                  undefined,
-                  undefined,
-                  undefined,
-                  factory.createIdentifier("query"),
-                  undefined,
-                  factory.createTypeReferenceNode(
-                    factory.createIdentifier(`${endpoint.summary}Query`),
+                )],
+                factory.createTypeReferenceNode(
+                  factory.createIdentifier("Promise"),
+                  [factory.createTypeReferenceNode(
+                    factory.createIdentifier(`${endpoint.pathName}Res`),
                     undefined
-                  ),
-                  undefined
+                  )]
                 )
-              ],
-              factory.createTypeReferenceNode(
-                factory.createIdentifier("Promise"),
-                [factory.createTypeReferenceNode(
-                  factory.createIdentifier(`${endpoint.summary}Res`),
-                  undefined
-                )]
               )
             ),
-            undefined
-          ),
-          factory.createParameterDeclaration(
-            undefined,
-            undefined,
-            undefined,
-            factory.createIdentifier("onValidationFailure"),
-            undefined,
-            factory.createUnionTypeNode([
-              factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
-              factory.createParenthesizedType(factory.createFunctionTypeNode(
+            factory.createPropertySignature(
+              undefined,
+              factory.createIdentifier("onValidationFailure"),
+              factory.createToken(ts.SyntaxKind.QuestionToken),
+              factory.createFunctionTypeNode(
                 undefined,
                 [factory.createParameterDeclaration(
                   undefined,
@@ -312,25 +347,26 @@ export function createClass(endpoint: Endpoint) {
                   undefined
                 )],
                 factory.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword)
-              ))
-            ])
-          )
-        ],
+              )
+            )
+          ]),
+          undefined
+        )],
         undefined,
         factory.createBlock(
           [factory.createExpressionStatement(factory.createCallExpression(
             factory.createIdentifier("__handle"),
             [
               factory.createTypeReferenceNode(
-                factory.createIdentifier(`${endpoint.summary}Body`),
+                factory.createIdentifier(`${endpoint.pathName}Body`),
                 undefined
               ),
               factory.createTypeReferenceNode(
-                factory.createIdentifier(`${endpoint.summary}Query`),
+                factory.createIdentifier(`${endpoint.pathName}Query`),
                 undefined
               ),
               factory.createTypeReferenceNode(
-                factory.createIdentifier(`${endpoint.summary}Res`),
+                factory.createIdentifier(`${endpoint.pathName}Res`),
                 undefined
               )
             ],
@@ -374,7 +410,7 @@ export function createClass(endpoint: Endpoint) {
                           undefined,
                           undefined,
                           undefined
-                        ),
+                        )
                       ],
                       undefined,
                       factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
@@ -382,22 +418,31 @@ export function createClass(endpoint: Endpoint) {
                         [factory.createReturnStatement(factory.createCallExpression(
                           factory.createIdentifier("cb"),
                           undefined,
-                          [
-                            factory.createIdentifier("body"),
-                            factory.createIdentifier("query"),
-                          ]
+                          [factory.createObjectLiteralExpression(
+                            [
+                              factory.createShorthandPropertyAssignment(
+                                factory.createIdentifier("body"),
+                                undefined
+                              ),
+                              factory.createShorthandPropertyAssignment(
+                                factory.createIdentifier("query"),
+                                undefined
+                              )
+                            ],
+                            false
+                          )]
                         ))],
                         true
                       )
-                    ),
+                    )
                   ),
                   factory.createPropertyAssignment(
                     factory.createIdentifier("zodBodySchema"),
-                    factory.createIdentifier(`${endpoint.summary}BodySchema`)
+                    factory.createIdentifier(`${endpoint.pathName}BodySchema`)
                   ),
                   factory.createPropertyAssignment(
                     factory.createIdentifier("zodQuerySchema"),
-                    factory.createIdentifier(`${endpoint.summary}QuerySchema`)
+                    factory.createIdentifier(`${endpoint.pathName}QuerySchema`)
                   ),
                   factory.createPropertyAssignment(
                     factory.createIdentifier("onValidationFailure"),
@@ -464,7 +509,7 @@ export function propsToZodElement(props: PropsOfCreateZodSchemaAndType) {
       undefined,
       factory.createVariableDeclarationList(
         [factory.createVariableDeclaration(
-          factory.createIdentifier(`${endpoint.summary}${type}Schema`),
+          factory.createIdentifier(`${endpoint.pathName}${type}Schema`),
           undefined,
           undefined,
           getObject()
@@ -492,7 +537,7 @@ export function propsToZodElement(props: PropsOfCreateZodSchemaAndType) {
       undefined,
       factory.createVariableDeclarationList(
         [factory.createVariableDeclaration(
-          factory.createIdentifier(`${endpoint.summary}${type}Schema`),
+          factory.createIdentifier(`${endpoint.pathName}${type}Schema`),
           undefined,
           undefined,
           getInitializer()
@@ -510,15 +555,15 @@ export function createZodSchemaAndType(props: PropsOfCreateZodSchemaAndType) {
     propsToZodElement(props),
     factory.createTypeAliasDeclaration(
       undefined,
-      undefined,
-      factory.createIdentifier(`${props.endpoint.summary}${props.type}`),
+      [factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+      factory.createIdentifier(`${props.endpoint.pathName}${props.type}`),
       undefined,
       factory.createTypeReferenceNode(
         factory.createQualifiedName(
           factory.createIdentifier("z"),
           factory.createIdentifier("infer")
         ),
-        [factory.createTypeQueryNode(factory.createIdentifier(`${props.endpoint.summary}${props.type}Schema`))]
+        [factory.createTypeQueryNode(factory.createIdentifier(`${props.endpoint.pathName}${props.type}Schema`))]
       )
     )
   ]

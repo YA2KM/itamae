@@ -2,10 +2,10 @@
 OpenAPI3 based express Wrap Code Generator With Zod for input validation.
 
 
-# THIS LIBRALY IS UNDER DEVELOPMENT.
+## THIS LIBRALY IS UNDER DEVELOPMENT.
 Most of functions are not available.
 
-#How to use
+## How to use
 
 ```
 cd src/
@@ -27,3 +27,6 @@ Then, Your Development Experience becomes better ;D
 And input datas are validated with Zod.
 ![image](https://user-images.githubusercontent.com/105862245/169307978-9d862466-f13c-408e-9c85-c2813644c264.png)
 
+
+Here is  sample of auto generated code.
+![carbon](https://user-images.githubusercontent.com/105862245/169318055-7126d687-0f6a-4cd2-a281-5add38907c1c.png)

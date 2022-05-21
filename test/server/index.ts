@@ -24,7 +24,7 @@ async function initialize(res: (value: (PromiseLike<http.Server> | http.Server))
   sushi.endpoints.azumaGet.handle({
     async cb ({query}) {
       return {
-        message: query.name
+        message: `${query.name} is ${query.age} years old.`
       }
     }
   })

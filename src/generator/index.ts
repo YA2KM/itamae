@@ -154,6 +154,11 @@ export function createImportStatement() {
           false,
           undefined,
           factory.createIdentifier("__handle")
+        ),
+        factory.createImportSpecifier(
+          false,
+          undefined,
+          factory.createIdentifier("SchemaType")
         )
       ])
     ),
@@ -227,9 +232,32 @@ export function createClass(endpoint: Endpoint) {
       ), factory.createPropertyDeclaration(
       undefined,
       undefined,
-      factory.createIdentifier("parseRequiredQueryKeyList"),
+      factory.createIdentifier("parseRequiredQueryList"),
       undefined,
-      factory.createArrayTypeNode(factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)),
+      factory.createArrayTypeNode(factory.createTypeLiteralNode([
+        factory.createPropertySignature(
+          undefined,
+          factory.createIdentifier("key"),
+          undefined,
+          factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
+        ),
+        factory.createPropertySignature(
+          undefined,
+          factory.createIdentifier("type"),
+          undefined,
+          factory.createTypeReferenceNode(
+            factory.createIdentifier("Exclude"),
+            [
+              factory.createTypeReferenceNode(
+                factory.createIdentifier("SchemaType"),
+                undefined
+              ),
+              factory.createLiteralTypeNode(factory.createStringLiteral("file"))
+            ]
+          )
+        )
+      ]))
+      ,
       undefined
     ),
       factory.createConstructorDeclaration(
@@ -257,13 +285,29 @@ export function createClass(endpoint: Endpoint) {
             factory.createExpressionStatement(factory.createBinaryExpression(
               factory.createPropertyAccessExpression(
                 factory.createThis(),
-                factory.createIdentifier("parseRequiredQueryKeyList")
+                factory.createIdentifier("parseRequiredQueryList")
               ),
               factory.createToken(ts.SyntaxKind.EqualsToken),
               factory.createArrayLiteralExpression(
-                endpoint.parameters
-                  .filter(param => param.schema.type === 'object')
-                  .map(param => factory.createStringLiteral(param.name)),
+                [
+                  ...endpoint.parameters
+                  .filter(param => [
+                    'array','boolean','integer','number','object'
+                  ].includes(param.schema.type))
+                  .map(param => factory.createObjectLiteralExpression(
+                    [
+                      factory.createPropertyAssignment(
+                        factory.createIdentifier("key"),
+                        factory.createStringLiteral(param.name)
+                      ),
+                      factory.createPropertyAssignment(
+                        factory.createIdentifier("type"),
+                        factory.createStringLiteral(param.schema.type)
+                      )
+                    ],
+                    true
+                  )),
+                ],
                 false
               )
             ))
@@ -449,10 +493,10 @@ export function createClass(endpoint: Endpoint) {
                     factory.createIdentifier("onValidationFailure")
                   ),
                   factory.createPropertyAssignment(
-                    factory.createIdentifier("parseRequiredQueryKeyList"),
+                    factory.createIdentifier("parseRequiredQueryList"),
                     factory.createPropertyAccessExpression(
                       factory.createThis(),
-                      factory.createIdentifier("parseRequiredQueryKeyList")
+                      factory.createIdentifier("parseRequiredQueryList")
                     )
                   )
                 ],

@@ -8,7 +8,6 @@ import * as net from "net";
   const address:net.AddressInfo | string | null = server.address()
   if (!(typeof address === 'string' || address === null)) {
     test('azuma test', async () => {
-      try {
         const {data} = await axios.get(`http://localhost:${address.port}/azuma`,{
           params: {
             name: 'azuma',
@@ -16,12 +15,8 @@ import * as net from "net";
           }
         })
         expect(data).toEqual({
-          message: 'azuma'
+          message: 'azuma is 20 years old.'
         })
-      } catch (e) {
-        const d = e as any
-        console.log(d.response.data.query.issues)
-      }
     })
   }
 })();

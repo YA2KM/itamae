@@ -8,6 +8,7 @@ export function init () {
   return router
 }
 export type method = 'get' | 'post'
+export type SchemaType = 'array' | 'boolean' | 'file' | 'integer' | 'number' | 'string' | 'object'
 
 
 export async function __handle<Body,Query,Res>(param:{
@@ -17,12 +18,21 @@ export async function __handle<Body,Query,Res>(param:{
   zodBodySchema: z.ZodSchema,
   zodQuerySchema: z.ZodSchema,
   onValidationFailure: undefined | ((res: Express.Response) => void),
-  parseRequiredQueryKeyList: string[]
+  parseRequiredQueryList: {
+    key: string,
+    type: Exclude<SchemaType,'file'>
+  }[]
 }) {
   router[param.method](param.path, async (req,res) => {
-    param.parseRequiredQueryKeyList.forEach(key => {
+    param.parseRequiredQueryList.forEach(({key, type}) => {
       try {
-        req.query[key] = JSON.parse(req.query[key] as any)
+        switch (key) {
+          case 'string':
+            break
+          default:
+            req.query[key] = JSON.parse(req.query[key] as any)
+            break
+        }
       }
       catch (e) {
         //Here is no Error Handling.

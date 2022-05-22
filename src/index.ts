@@ -2,7 +2,7 @@ import * as ts from 'typescript'
 
 const factory = ts.factory
 import * as fs from "fs";
-import fse, {mkdirp} from "fs-extra";
+import {mkdirp, copySync} from "fs-extra";
 import path from 'path'
 import $SwaggerParser from '@apidevtools/swagger-parser'
 import * as generator from "./generator";
@@ -62,14 +62,14 @@ import {compile} from './compiler';
   await mkdirp(targetDir)
 
   //module compile
-  compile(root + '/tsconfig.json')
+  compile(root + '/config.json')
   //tsconfig compile
-  compile(root + '/tsconfig.esm.json')
+  compile(root + '/config.esm.json')
 
   //copy package.json for generated module
   fs.copyFileSync(root + "/assets/package.json", root + "/sushi/server/package.json")
   //copy to target project node_modules
-  fse.copySync(require.main.path + "/sushi", targetDir)
+  copySync(require.main.path + "/sushi", targetDir)
   console.log("DONE!\n")
 })()
 

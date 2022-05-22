@@ -7,7 +7,7 @@
     "strict": true,
     "lib": ["ESNext"],
     "types": ["node"],
-    "outDir": "sushi/server/dist",
+    "outDir": "sushi/server/dist"
   },
   "include": ["server"]
 }

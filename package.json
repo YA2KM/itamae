@@ -2,7 +2,6 @@
   "name": "itamaejs",
   "version": "1.0.0",
   "description": "generate TypeScript Code from OpenAPI Schema.",
-  "main": "index.js",
   "author": "Yukito Azuma",
   "license": "MIT",
   "devDependencies": {
@@ -10,20 +9,32 @@
     "@types/fs-extra": "^9.0.13",
     "@types/mkdirp": "^1.0.2",
     "axios": "^0.27.2",
+    "copyfiles": "^2.4.1",
     "express": "^4.18.1",
     "mkdirp": "^1.0.4",
+    "rimraf": "^3.0.2",
     "ts-node": "^10.7.0",
     "typescript": "^4.6.4",
     "vitest": "^0.12.6"
   },
   "scripts": {
     "test": "vitest run",
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node src/index.ts",
+    "prebuild": "rimraf dist",
+    "build": "tsc",
+    "copyMySpecialFiles": "copyfiles -f src/server/index.ts dist/server && copyfiles -f src/config.* dist && copyfiles -f src/assets/package.json dist/assets",
+    "postbuild": "npm run copyMySpecialFiles"
   },
   "dependencies": {
     "fs-extra": "^10.1.0",
     "swagger-parser": "^10.0.3",
     "ts-node-dev": "^1.1.8",
     "zod": "^3.16.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "itamae": "dist/index.js"
   }
 }

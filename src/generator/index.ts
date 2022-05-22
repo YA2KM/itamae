@@ -28,16 +28,20 @@ export interface ResponseSchemaProperty {
   type: string
 }
 
+type ResSchema = {
+  type: 'object',
+  properties: {
+    [key: string]: ResponseSchemaProperty
+  }
+} | {
+  type: Exclude<SchemaType, 'object'>
+}
+
 export interface Response {
   description: string,
   content: {
     [key: string]: {
-      schema: {
-        type: 'object',
-        properties: {
-          [key: string]: ResponseSchemaProperty
-        }
-      }
+      schema: ResSchema
     }
   }
 }
@@ -49,42 +53,42 @@ export interface Endpoint {
   pathName: string,
   operationId: string,
   responses: {
-    200: Response
+    [key: string]: Response
   }
   parameters: Parameters[],
   requestBody?: SchemaProperty
 }
 
-function createHandlePropsType({endpoint}: {endpoint: Endpoint}) {
+function createHandlePropsType({endpoint}: { endpoint: Endpoint }) {
   return [
     factory.createTypeAliasDeclaration(
-    undefined,
-    undefined,
-    factory.createIdentifier(`${endpoint.pathName}HandleQueryType`),
-    undefined,
-    factory.createTypeLiteralNode(
-      [
-        factory.createPropertySignature(
-          undefined,
-          factory.createIdentifier("body"),
-          undefined,
-          factory.createTypeReferenceNode(
-            factory.createIdentifier(`${endpoint.pathName}Body`),
-            undefined
+      undefined,
+      undefined,
+      factory.createIdentifier(`${endpoint.pathName}HandleQueryType`),
+      undefined,
+      factory.createTypeLiteralNode(
+        [
+          factory.createPropertySignature(
+            undefined,
+            factory.createIdentifier("body"),
+            undefined,
+            factory.createTypeReferenceNode(
+              factory.createIdentifier(`${endpoint.pathName}Body`),
+              undefined
+            )
+          ),
+          factory.createPropertySignature(
+            undefined,
+            factory.createIdentifier("query"),
+            undefined,
+            factory.createTypeReferenceNode(
+              factory.createIdentifier(`${endpoint.pathName}Query`),
+              undefined
+            )
           )
-        ),
-        factory.createPropertySignature(
-          undefined,
-          factory.createIdentifier("query"),
-          undefined,
-          factory.createTypeReferenceNode(
-            factory.createIdentifier(`${endpoint.pathName}Query`),
-            undefined
-          )
-        )
-      ]
-    )
-  )]
+        ]
+      )
+    )]
 }
 
 export function processParametersAndRequestBody(parameters: Parameters[] | undefined, endpoint: Endpoint, property: SchemaProperty | undefined): Statement[] {
@@ -154,6 +158,11 @@ export function createImportStatement() {
           false,
           undefined,
           factory.createIdentifier("__handle")
+        ),
+        factory.createImportSpecifier(
+          false,
+          undefined,
+          factory.createIdentifier("SchemaType")
         )
       ])
     ),
@@ -185,17 +194,83 @@ export function convertASTtoCode(astList: ts.Node[]): string[] {
 }
 
 export function createResType(endpoint: Endpoint) {
+  type resData = {
+    statusCode: string,
+    responseType: string,
+    schema: ResSchema
+  }
+  const typeDataList: resData[] = []
+  Object.keys(endpoint.responses).forEach(statusCode => {
+    const response = endpoint.responses[statusCode]
+    Object.keys(response.content).forEach(responseType => {
+      const content = response.content[responseType]
+      typeDataList.push({
+        schema: content.schema,
+        statusCode,
+        responseType
+      })
+    })
+  })
+
+  function getMembers(typeData: resData): TypeNode {
+    if (typeData.schema.type === 'object') {
+      const properties = typeData.schema.properties
+      return factory.createTypeLiteralNode(
+        Object.keys(properties).map(key => {
+          const property = properties[key]
+          return convertResPropertyToAstTypeNode(property, key)
+        })
+      )
+    } else {
+      switch (typeData.schema.type) {
+        case "string":
+          return factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
+        case "boolean":
+          return factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword)
+        case "array":
+          return factory.createArrayTypeNode(factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword))
+        case "file":
+          return factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
+        case "number":
+          return factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
+        case "integer":
+          return factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
+      }
+    }
+  }
+
   return factory.createTypeAliasDeclaration(
     undefined,
     undefined,
     factory.createIdentifier(`${endpoint.pathName}Res`),
     undefined,
-    factory.createTypeLiteralNode(
-      Object.keys(endpoint.responses["200"].content['*/*'].schema.properties).map(key => {
-        const property = endpoint.responses["200"].content['*/*'].schema.properties[key]
-        return convertResPropertyToAstTypeNode(property, key)
-      }))
-  );
+    factory.createUnionTypeNode(
+      typeDataList.map(typeData => factory.createTypeLiteralNode(
+        [
+          factory.createPropertySignature(
+            undefined,
+            factory.createStringLiteral("statusCode"),
+            undefined,
+            factory.createLiteralTypeNode(factory.createStringLiteral(typeData.statusCode))
+
+          ),
+          factory.createPropertySignature(
+            undefined,
+            factory.createStringLiteral("responseType"),
+            undefined,
+            factory.createLiteralTypeNode(factory.createStringLiteral(typeData.responseType))
+
+          ),
+          factory.createPropertySignature(
+            undefined,
+            factory.createStringLiteral("data"),
+            undefined,
+            getMembers(typeData)
+          )
+        ]
+      ))
+    )
+  )
 }
 
 export function createClass(endpoint: Endpoint) {
@@ -227,9 +302,32 @@ export function createClass(endpoint: Endpoint) {
       ), factory.createPropertyDeclaration(
       undefined,
       undefined,
-      factory.createIdentifier("parseRequiredQueryKeyList"),
+      factory.createIdentifier("parseRequiredQueryList"),
       undefined,
-      factory.createArrayTypeNode(factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)),
+      factory.createArrayTypeNode(factory.createTypeLiteralNode([
+        factory.createPropertySignature(
+          undefined,
+          factory.createIdentifier("key"),
+          undefined,
+          factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
+        ),
+        factory.createPropertySignature(
+          undefined,
+          factory.createIdentifier("type"),
+          undefined,
+          factory.createTypeReferenceNode(
+            factory.createIdentifier("Exclude"),
+            [
+              factory.createTypeReferenceNode(
+                factory.createIdentifier("SchemaType"),
+                undefined
+              ),
+              factory.createLiteralTypeNode(factory.createStringLiteral("file"))
+            ]
+          )
+        )
+      ]))
+      ,
       undefined
     ),
       factory.createConstructorDeclaration(
@@ -257,13 +355,29 @@ export function createClass(endpoint: Endpoint) {
             factory.createExpressionStatement(factory.createBinaryExpression(
               factory.createPropertyAccessExpression(
                 factory.createThis(),
-                factory.createIdentifier("parseRequiredQueryKeyList")
+                factory.createIdentifier("parseRequiredQueryList")
               ),
               factory.createToken(ts.SyntaxKind.EqualsToken),
               factory.createArrayLiteralExpression(
-                endpoint.parameters
-                  .filter(param => param.schema.type === 'object')
-                  .map(param => factory.createStringLiteral(param.name)),
+                [
+                  ...endpoint.parameters
+                    .filter(param => [
+                      'array', 'boolean', 'integer', 'number', 'object'
+                    ].includes(param.schema.type))
+                    .map(param => factory.createObjectLiteralExpression(
+                      [
+                        factory.createPropertyAssignment(
+                          factory.createIdentifier("key"),
+                          factory.createStringLiteral(param.name)
+                        ),
+                        factory.createPropertyAssignment(
+                          factory.createIdentifier("type"),
+                          factory.createStringLiteral(param.schema.type)
+                        )
+                      ],
+                      true
+                    )),
+                ],
                 false
               )
             ))
@@ -449,10 +563,10 @@ export function createClass(endpoint: Endpoint) {
                     factory.createIdentifier("onValidationFailure")
                   ),
                   factory.createPropertyAssignment(
-                    factory.createIdentifier("parseRequiredQueryKeyList"),
+                    factory.createIdentifier("parseRequiredQueryList"),
                     factory.createPropertyAccessExpression(
                       factory.createThis(),
-                      factory.createIdentifier("parseRequiredQueryKeyList")
+                      factory.createIdentifier("parseRequiredQueryList")
                     )
                   )
                 ],
@@ -519,6 +633,7 @@ export function propsToZodElement(props: PropsOfCreateZodSchemaAndType) {
     )
   } else {
     const {property, endpoint, type} = props
+
     function getInitializer() {
       if (property === void 0) {
         return factory.createCallExpression(

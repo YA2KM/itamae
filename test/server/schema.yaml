@@ -21,13 +21,19 @@ paths:
         "200":
           description: sample Response
           content:
-            "*/*":
+            "application/json":
               schema:
                 type: object
                 properties:
                   message:
                     type: string
                     example: hello Azuma
+        "500":
+          description: sample Error Response
+          content:
+            "text/plain":
+              schema:
+                type: string
 #    post:
 #      summary: azumaPost
 #      operationId: azumaPost
